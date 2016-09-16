@@ -1,0 +1,26 @@
+#!/usr/bin/env gnuplot
+
+# Start from scratch by removing presets
+reset
+# Resolution of the produce image
+set terminal pngcairo size 1000, 1000
+# Name of the image
+set output 'output.png'
+# Custom colors for the heatmap
+set palette defined (0 "#000033", 17 "#002277", 33 "#005577",\
+    50 "#0088cc", 66 "#cf9900", 83 "#77001a", 100 "#772200")
+# Min/max 3rd column values for heatmap (0 up to MAXITERATIONS)
+set cbrange [0:256]
+# Set all margins to 0
+set lmargin 0
+set rmargin 0
+set bmargin 0
+set tmargin 0
+# Remove the border, heatmap color box, and axes tics 
+unset border
+unset colorbox
+unset xtics
+unset ytics
+# Plot the output of `julia'
+plot '< ./julia' with image notitle
+#plot 'data.dat' with image notitle
