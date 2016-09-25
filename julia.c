@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 #include <complex.h>
-#include <math.h> // The sqrt function is needed to find magnitude
+#include <math.h>
 
 #define MAXITERATIONS 256 // Highest iteration count in testMembership()
 //#define PARAMETER -0.805 + 0.175 * I // The `c' value (changes plot)
