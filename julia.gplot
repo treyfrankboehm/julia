@@ -5,7 +5,7 @@ reset
 # Resolution of the produce image
 set terminal pngcairo size 1000, 1000
 # Name of the image
-set output 'output.png'
+set output 'julia.png'
 # Custom colors for the heatmap
 set palette defined (0 "#000033", 17 "#002277", 33 "#005577",\
     50 "#0088cc", 66 "#cf9900", 83 "#77001a", 100 "#772200")
