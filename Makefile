@@ -1,13 +1,23 @@
-CFLAGS=-Wall -g -lm
+PROGRAM=julia
+PARAMETERS=parameters.h
+DATA=data.txt
+
+CFLAGS=-Wall -g -lm -O2
 CC=gcc
 
-all: clean julia
+all: $(PROGRAM)
+	@time ./$(PROGRAM)
 
-julia: julia.c
-	$(CC) $(CFLAGS) julia.c -o julia
-	./julia.gplot
+gif: all
+	@echo "  Creating a gif from the PNGs  "
+	@time convert -delay 6 png/*.png julia.gif
+
+$(PROGRAM): clean $(PROGRAM).c $(PARAMETERS)
+	@echo "  CC    $(PROGRAM).c  "
+	@$(CC) $(CFLAGS) $(PROGRAM).c -o $(PROGRAM)
 
 clean:
-	rm -f *.png
-	rm -f *.dat
-	rm -f julia
+	@echo "  Cleaning  "
+	@rm -f $(PROGRAM) $(DATA)
+	@rm -rf png
+

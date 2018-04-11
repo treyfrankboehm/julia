@@ -1,7 +1,7 @@
 /*
- * julia.c: Generate points to plot a Julia Set with a given parameter
- * 
- * Copyright (c) 2016 Trey Boehm
+ * julia.c: Generate points to plot a Julia Set with given parameters
+ *
+ * Copyright (c) 2018 Trey Boehm
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,55 +17,77 @@
 
 #include <stdio.h>
 #include <complex.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
-#define MAXITERATIONS 256 // Highest iteration count in testMembership()
-//#define PARAMETER -0.805 + 0.175 * I // The `c' value (changes plot)
-#define PARAMETER -.835 - .2321 * I // The `c' value (changes plot)
-#define REMIN -1.6 // Minimum value on the real (horizontal) axis
-#define REMAX 1.6 // Maximum value on the real (horizontal) axis
-#define IMMIN -1.6 // Minimum value on the imaginary (vertical) axis
-#define IMMAX 1.6 // Maximum value on the imaginary (vertical) axis
-#define RESOLUTION 1000 // Width of the square plot generated (pixels)
+#include "parameters.h"
 
-// Find the magnitude of a complex number using Pythagorean theorem
-float magnitude(float complex z);
-// Count how many iterations it takes to diverge on z = z*z + c
-int testMembership(float complex z);
+/* Number of iterations for z = zeqn(z)+c to diverge */
+int testMembership(double complex z, double complex parameter);
+/* The equation we iterate on */
+double complex zeqn(double complex z);
 
-float magnitude(float complex z) {
-    float rePart = creal(z);
-    float imPart = cimag(z);
-    float sumSquares = rePart*rePart + imPart*imPart;
-    return sqrt(sumSquares);
-}
-
-int testMembership(float complex z) {
-    float complex param = PARAMETER;
+int testMembership(double complex z, double complex parameter) {
     int count;
-    for (count = 0; count < MAXITERATIONS; count++) {
-        z = z*z + param;
-        if (magnitude(z) > 2) {
+    for (count = 0; count < MAX_ITERATIONS; count++) {
+        z = zeqn(z) + parameter;
+        if (cabs(z) > 4) {
             return count;
         }
     }
     return count;
 }
 
+double complex zeqn(double complex z) {
+    //return (1-cpow(z,4)/24)/cpow((z-cpow(z,3)/6),3);
+    //return (1-cpow(z,3)/6)/cpow((z-cpow(z,2)/2),2);
+    //return (1-z*z*z/6)/((z-z*z/2)*(z-z*z/2));
+    return cpow(z,2);
+}
+
 int main(int argc, char *argv[]) {
-    float complex z;
-    float delta = (REMAX-REMIN)/((float)RESOLUTION);
-    float re;
-    float im;
+    double complex z;
+    double delta = (REMAX-REMIN)/((double)RESOLUTION);
+    double re;
+    double im;
+    double theta;
+    //double complex radius = PARAMETER;
+    double radius = 0.707;
+    double complex cVal;
     int iterCount;
 
-    for (re = REMIN; re < REMAX; re = re + delta) {
-        for (im = IMMIN; im < IMMAX; im = im + delta) {
-            z = re + im * I;
-            iterCount = testMembership(z);
-            printf("%.3f\t%.3f\t%d\n", re, im, iterCount);
+    char gnuplotCMD[1000];
+    char mvCMD[100];
+    FILE* fp;
+    char buffer[50];
+
+    sprintf(gnuplotCMD, "gnuplot -e \"reset; set terminal pngcairo size %d, %d; set cbrange [1:%d]; load 'jet.pal'; set output 'png/julia.png'; set lmargin 0; set rmargin 0; set bmargin 0; set tmargin 0; unset border; unset colorbox; unset xtics; unset ytics; plot 'data.txt' with image notitle\" 2>/dev/null", RESOLUTION, RESOLUTION, MAX_ITERATIONS);
+
+    system("mkdir -p png");
+
+    for (theta = 0; theta < 2*3.14159; theta += THETA_STEP) {
+        fp = fopen("data.txt", "w");
+        //cVal = radius*cos(theta) + radius*sin(theta)*I;
+        cVal = radius*cexp(theta*I);
+        for (re = REMIN; re < REMAX; re = re + delta) {
+            for (im = IMMIN; im < IMMAX; im = im + delta) {
+                z = re + im * I;
+                iterCount = testMembership(z, cVal);
+                sprintf(buffer, "%.3f\t%.3f\t%d\n", re, im, iterCount);
+                fwrite(buffer, strlen(buffer), 1, fp);
+
+            }
         }
+        printf("theta = %.2f/6.28\n", theta);
+        fclose(fp);
+
+        system(gnuplotCMD);
+        system("rm data.txt");
+        sprintf(mvCMD, "mv png/julia.png png/julia-%.3f.png", theta);
+        system(mvCMD);
     }
+
     return 0;
 }
 
