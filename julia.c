@@ -23,37 +23,46 @@
 
 #include "parameters.h"
 
+#ifdef CREATE_GIF
+double THETA_MAX = 6.28;
+char* gifCMD = "time convert -delay 6 png/*.png julia.gif";
+#else
+double THETA_MAX = 0;
+char* gifCMD = "echo \"Still image created.\"";
+#endif
+
 /* Number of iterations for z = zeqn(z)+c to diverge */
 int testMembership(double complex z, double complex parameter);
 /* The equation we iterate on */
 double complex zeqn(double complex z);
 
-int testMembership(double complex z, double complex parameter) {
+int testMembership(double complex z, double complex parameter)
+{
     int count;
     for (count = 0; count < MAX_ITERATIONS; count++) {
         z = zeqn(z) + parameter;
-        if (cabs(z) > 4) {
+        if (cabs(z) > 2) {
             return count;
         }
     }
     return count;
 }
 
-double complex zeqn(double complex z) {
+double complex zeqn(double complex z)
+{
     //return (1-cpow(z,4)/24)/cpow((z-cpow(z,3)/6),3);
     //return (1-cpow(z,3)/6)/cpow((z-cpow(z,2)/2),2);
     //return (1-z*z*z/6)/((z-z*z/2)*(z-z*z/2));
     return cpow(z,2);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     double complex z;
     double delta = (REMAX-REMIN)/((double)RESOLUTION);
     double re;
     double im;
     double theta;
-    //double complex radius = PARAMETER;
-    double radius = 0.707;
     double complex cVal;
     int iterCount;
 
@@ -62,16 +71,28 @@ int main(int argc, char *argv[]) {
     FILE* fp;
     char buffer[50];
 
-    sprintf(gnuplotCMD, "gnuplot -e \"reset; set terminal pngcairo size %d, %d; set cbrange [1:%d]; load 'jet.pal'; set output 'png/julia.png'; set lmargin 0; set rmargin 0; set bmargin 0; set tmargin 0; unset border; unset colorbox; unset xtics; unset ytics; plot 'data.txt' with image notitle\" 2>/dev/null", RESOLUTION, RESOLUTION, MAX_ITERATIONS);
+    sprintf(gnuplotCMD,
+            "gnuplot -e \"reset;\
+            set terminal pngcairo size %d, %d;\
+            set size ratio 1;\
+            set cbrange [1:%d];\
+            load 'jet.pal';\
+            set output 'png/julia.png';\
+            set lmargin 0; set rmargin 0;\
+            set bmargin 0; set tmargin 0;\
+            set border 15 front lw 2 lc rgb '#000080';\
+            unset colorbox;\
+            unset xtics; unset ytics;\
+            plot 'data.txt' with image notitle\" 2>/dev/null",
+            RESOLUTION, RESOLUTION, MAX_ITERATIONS);
 
     system("mkdir -p png");
 
-    for (theta = 0; theta < 2*3.14159; theta += THETA_STEP) {
+    for (theta = 0; theta <= THETA_MAX; theta += THETA_STEP) {
         fp = fopen("data.txt", "w");
-        //cVal = radius*cos(theta) + radius*sin(theta)*I;
-        cVal = radius*cexp(theta*I);
+        cVal = PARAMETER*cexp(theta*I);
         for (re = REMIN; re < REMAX; re = re + delta) {
-            for (im = IMMIN; im < IMMAX; im = im + delta) {
+            for (im = IMMIN; im <= IMMAX; im = im + delta) {
                 z = re + im * I;
                 iterCount = testMembership(z, cVal);
                 sprintf(buffer, "%.3f\t%.3f\t%d\n", re, im, iterCount);
@@ -87,6 +108,8 @@ int main(int argc, char *argv[]) {
         sprintf(mvCMD, "mv png/julia.png png/julia-%.3f.png", theta);
         system(mvCMD);
     }
+
+    system(gifCMD);
 
     return 0;
 }

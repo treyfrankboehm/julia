@@ -19,5 +19,4 @@ $(PROGRAM): clean $(PROGRAM).c $(PARAMETERS)
 clean:
 	@echo "  Cleaning  "
 	@rm -f $(PROGRAM) $(DATA)
-	@rm -rf png
 
